@@ -13,6 +13,8 @@
   }
   html, body {
     width: 100%;
+    height: 100%;
+    overflow: hidden;
     background: #ffffff;
     color: #000000;
     font-family: "Courier New", monospace;
@@ -25,8 +27,20 @@
     Block flow (vertical) + display:table (equal columns) is understood
     by both ancient and modern browsers, so it renders correctly on all.
   */
+  /*
+    The whole app is rotated 90 degrees counter-clockwise so the
+    screen's LEFT edge becomes the BOTTOM (landscape use on the Kindle).
+    Old Kindle WebKit has no vh/vw units, so the exact pixel size and the
+    rotate/translate transform are set from JS (see rotateApp()).
+  */
   #wrap {
+    position: absolute;
+    top: 0;
+    left: 0;
     padding: 20px;
+    overflow: hidden;
+    -webkit-transform-origin: top left;
+    transform-origin: top left;
   }
   #clock {
     text-align: center;
@@ -210,6 +224,24 @@
     updateClock();
   }
 
+  // Rotate the app 90 degrees counter-clockwise so the screen's left edge
+  // becomes the bottom. Sized in pixels because the old Kindle browser has
+  // no vh/vw units and ignores the Fullscreen / orientation-lock APIs.
+  function rotateApp() {
+    var wrap = document.getElementById("wrap");
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    // After a -90deg rotation the box's width/height are swapped.
+    wrap.style.width = h + "px";
+    wrap.style.height = w + "px";
+    var t = "translateY(" + h + "px) rotate(-90deg)";
+    wrap.style.webkitTransform = t;
+    wrap.style.transform = t;
+  }
+
+  window.onresize = rotateApp;
+
+  rotateApp();
   updateClock();
 </script>
 </body>
