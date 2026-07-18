@@ -209,11 +209,11 @@
     btn.innerHTML = isRunning ? "\u25A0" : "\u25B6";
   }
 
-  // Reveal the recent-laps list and (re)start the 5s inactivity auto-hide.
+  // Reveal the recent-laps list and (re)start the 10s inactivity auto-hide.
   function showLaps() {
     document.getElementById("laps").style.visibility = "visible";
     if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
-    lapsHideTimer = setTimeout(hideLaps, 5000);
+    lapsHideTimer = setTimeout(hideLaps, 10000);
   }
 
   function hideLaps() {
