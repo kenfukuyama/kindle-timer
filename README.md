@@ -1,15 +1,17 @@
 # kindle-timer
 
-A minimal, high-contrast **Split Timer** (stopwatch) built as a single static
-`index.html`. It uses a black-on-white, monospace design that works well on
-low-power / e-ink browsers such as the Kindle's experimental browser.
+A minimal, high-contrast **Stopwatch** built as a single static `index.html`.
+It uses a black-on-white, monospace design and is rotated 90° for landscape use
+on low-power / e-ink browsers such as the Kindle Paperwhite's experimental
+browser.
 
 ## Features
 
-- Start / Stop the timer
-- Record splits (lap + cumulative total)
-- Reset everything
+- Start / Stop / Reset — that's it
+- Rotated sideways (the screen's left edge becomes the bottom) for landscape use
 - No dependencies — pure HTML, CSS, and vanilla JavaScript
+- Built to work on the old Kindle WebKit (no flexbox, no `vh`/`vw`, no arrow
+  functions): uses block flow + CSS tables and sizes the rotation from JS
 
 ## Local usage
 
@@ -19,6 +21,9 @@ Just open `index.html` in any browser, or serve it locally:
 python3 -m http.server 8000
 # then visit http://localhost:8000
 ```
+
+> Note: because it is rotated for the Kindle, it will appear sideways on a
+> normal desktop browser. That is expected.
 
 ## Deployment (GitHub Pages)
 
