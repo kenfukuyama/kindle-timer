@@ -26,7 +26,7 @@
     / orientation APIs, so the pixel size + rotate transform are set from JS
     (rotateApp). The whole screen is filled with a CSS table layout because
     that WebKit has no flexbox: the clock row expands to take all remaining
-    height, and the button row is anchored to the bottom.
+    height, and the bottom row (laps + buttons) is anchored to the bottom.
   */
   #wrap {
     position: absolute;
@@ -72,7 +72,9 @@
     font-size: 50px;
     font-weight: bold;
     letter-spacing: 1px;
-    padding-top: 26px;
+    text-align: center;
+    padding-bottom: 24px;
+    visibility: hidden;
   }
   #laps div {
     padding: 4px 0;
@@ -96,9 +98,35 @@
     color: #000000;
     vertical-align: middle;
   }
-  .btn.active {
-    background: #000000;
-    color: #ffffff;
+  /* Invisible tap zone in the top-left corner of the (rotated) content that
+     toggles the full lap-history overlay. */
+  #historyTap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 160px;
+    z-index: 20;
+  }
+  #history {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    padding: 40px;
+    overflow-y: auto;
+    z-index: 15;
+  }
+  #history div {
+    font-size: 54px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 14px 4px;
+    border-bottom: 2px solid #000000;
+    text-align: center;
   }
 </style>
 </head>
@@ -109,11 +137,11 @@
       <div id="clockCell">
         <div id="total">00:00</div>
         <div id="clock">00:00</div>
-        <div id="laps"></div>
       </div>
     </div>
     <div id="btnRow">
       <div id="btnCell">
+        <div id="laps"></div>
         <div id="buttons">
           <div class="btn" id="startBtn" onclick="toggleStart()">&#9654;</div>
           <div class="btn" id="lapBtn" onclick="recordLap()">&#9873;</div>
@@ -122,6 +150,8 @@
       </div>
     </div>
   </div>
+  <div id="historyTap" onclick="toggleHistory()"></div>
+  <div id="history" onclick="hideHistory()"></div>
 </div>
 
 <script>
@@ -132,6 +162,7 @@
   var tickHandle = null;
   var laps = [];
   var LAPS_SHOWN = 3;
+  var lapsHideTimer = null;
 
   function formatTime(ms) {
     var totalSeconds = Math.floor(ms / 1000);
@@ -178,6 +209,17 @@
     btn.innerHTML = isRunning ? "\u25A0" : "\u25B6";
   }
 
+  // Reveal the recent-laps list and (re)start the 10s inactivity auto-hide.
+  function showLaps() {
+    document.getElementById("laps").style.visibility = "visible";
+    if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
+    lapsHideTimer = setTimeout(hideLaps, 10000);
+  }
+
+  function hideLaps() {
+    document.getElementById("laps").style.visibility = "hidden";
+  }
+
   // Button 1: Start when stopped, Stop when running.
   function toggleStart() {
     if (!running) {
@@ -194,6 +236,7 @@
       setStartLabel(false);
       updateClock();
     }
+    showLaps();
   }
 
   // Button 2: Lap. Records the current split, then pauses both timers and
@@ -210,6 +253,7 @@
     setStartLabel(false);
     updateClock();
     renderLaps();
+    showLaps();
   }
 
   // Show the most recent laps, newest on top (e.g. Lap 3, Lap 2, Lap 1).
@@ -234,6 +278,31 @@
     setStartLabel(false);
     updateClock();
     renderLaps();
+    if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
+    hideLaps();
+  }
+
+  // Top-corner tap toggles a full-history overlay (all laps, newest on top).
+  function toggleHistory() {
+    var h = document.getElementById("history");
+    if (h.style.display === "block") {
+      h.style.display = "none";
+      return;
+    }
+    var html = "";
+    if (laps.length === 0) {
+      html = "<div>No laps yet</div>";
+    } else {
+      for (var i = laps.length - 1; i >= 0; i--) {
+        html += "<div>Lap " + (i + 1) + "  " + formatTime(laps[i]) + "</div>";
+      }
+    }
+    h.innerHTML = html;
+    h.style.display = "block";
+  }
+
+  function hideHistory() {
+    document.getElementById("history").style.display = "none";
   }
 
   // Rotate the app 90 degrees clockwise (Version B) so the content reads
