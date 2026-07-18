@@ -87,7 +87,7 @@
     display: table-cell;
     width: 33%;
     padding: 80px 0;
-    font-size: 38px;
+    font-size: 60px;
     font-weight: bold;
     text-align: center;
     border: 2px solid #000000;
@@ -114,9 +114,9 @@
     <div id="btnRow">
       <div id="btnCell">
         <div id="buttons">
-          <div class="btn" id="startBtn" onclick="toggleStart()">Start</div>
-          <div class="btn" id="lapBtn" onclick="recordLap()">Lap</div>
-          <div class="btn" id="resetBtn" onclick="resetAll()">Reset</div>
+          <div class="btn" id="startBtn" onclick="toggleStart()">&#9654;</div>
+          <div class="btn" id="lapBtn" onclick="recordLap()">&#9873;</div>
+          <div class="btn" id="resetBtn" onclick="resetAll()">&#8634;</div>
         </div>
       </div>
     </div>
@@ -168,7 +168,8 @@
 
   function setStartLabel(isRunning) {
     var btn = document.getElementById("startBtn");
-    btn.innerHTML = isRunning ? "Stop" : "Start";
+    // U+25A0 (stop square) while running, U+25B6 (play) while stopped.
+    btn.innerHTML = isRunning ? "\u25A0" : "\u25B6";
     btn.className = isRunning ? "btn active" : "btn";
   }
 
