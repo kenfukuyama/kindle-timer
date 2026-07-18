@@ -229,8 +229,12 @@
   // no vh/vw units and ignores the Fullscreen / orientation-lock APIs.
   function rotateApp() {
     var wrap = document.getElementById("wrap");
-    var w = window.innerWidth;
-    var h = window.innerHeight;
+    var de = document.documentElement;
+    // Read the viewport defensively: the Kindle browser is inconsistent
+    // about which of these it populates. Fall back to the Paperwhite's
+    // typical CSS viewport (~758 x 1024) if all else fails.
+    var w = window.innerWidth || de.clientWidth || 758;
+    var h = window.innerHeight || de.clientHeight || 1024;
     // After a -90deg rotation the box's width/height are swapped.
     wrap.style.width = h + "px";
     wrap.style.height = w + "px";
