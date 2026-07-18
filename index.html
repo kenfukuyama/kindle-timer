@@ -97,8 +97,8 @@
   <div id="layout">
     <div id="clockRow">
       <div id="clockCell">
-        <div id="total">00:00:00</div>
-        <div id="clock">00:00:00</div>
+        <div id="total">00:00</div>
+        <div id="clock">00:00</div>
       </div>
     </div>
     <div id="btnRow">
@@ -126,7 +126,11 @@
     var minutes = Math.floor((totalSeconds % 3600) / 60);
     var seconds = totalSeconds % 60;
     function pad(n) { return n < 10 ? "0" + n : "" + n; }
-    return pad(hours) + ":" + pad(minutes) + ":" + pad(seconds);
+    // Only show the hours segment once past the 1 hour mark.
+    if (hours > 0) {
+      return hours + ":" + pad(minutes) + ":" + pad(seconds);
+    }
+    return pad(minutes) + ":" + pad(seconds);
   }
 
   // The total and split clocks advance together while running; they differ
