@@ -74,6 +74,7 @@
     letter-spacing: 1px;
     text-align: center;
     padding-bottom: 24px;
+    visibility: hidden;
   }
   #laps div {
     padding: 4px 0;
@@ -129,6 +130,7 @@
   var tickHandle = null;
   var laps = [];
   var LAPS_SHOWN = 3;
+  var lapsHideTimer = null;
 
   function formatTime(ms) {
     var totalSeconds = Math.floor(ms / 1000);
@@ -175,6 +177,17 @@
     btn.innerHTML = isRunning ? "\u25A0" : "\u25B6";
   }
 
+  // Reveal the recent-laps list and (re)start the 5s inactivity auto-hide.
+  function showLaps() {
+    document.getElementById("laps").style.visibility = "visible";
+    if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
+    lapsHideTimer = setTimeout(hideLaps, 5000);
+  }
+
+  function hideLaps() {
+    document.getElementById("laps").style.visibility = "hidden";
+  }
+
   // Button 1: Start when stopped, Stop when running.
   function toggleStart() {
     if (!running) {
@@ -191,6 +204,7 @@
       setStartLabel(false);
       updateClock();
     }
+    showLaps();
   }
 
   // Button 2: Lap. Records the current split, then pauses both timers and
@@ -207,6 +221,7 @@
     setStartLabel(false);
     updateClock();
     renderLaps();
+    showLaps();
   }
 
   // Show the most recent laps, newest on top (e.g. Lap 3, Lap 2, Lap 1).
@@ -231,6 +246,8 @@
     setStartLabel(false);
     updateClock();
     renderLaps();
+    if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
+    hideLaps();
   }
 
   // Rotate the app 90 degrees clockwise (Version B) so the content reads
