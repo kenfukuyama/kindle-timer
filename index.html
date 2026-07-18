@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>Split Timer</title>
+<title>Stopwatch</title>
 <style>
   * {
     margin: 0;
@@ -20,18 +20,11 @@
     font-family: "Courier New", monospace;
   }
   /*
-    Layout uses normal block flow + CSS tables instead of flexbox.
-    The Kindle "experimental browser" runs a very old WebKit that only
-    supports the 2009 flexbox spec (display:-webkit-box), whose default
-    orientation is horizontal. That made every section sit side-by-side.
-    Block flow (vertical) + display:table (equal columns) is understood
-    by both ancient and modern browsers, so it renders correctly on all.
-  */
-  /*
-    The whole app is rotated 90 degrees counter-clockwise so the
-    screen's LEFT edge becomes the BOTTOM (landscape use on the Kindle).
-    Old Kindle WebKit has no vh/vw units, so the exact pixel size and the
-    rotate/translate transform are set from JS (see rotateApp()).
+    The app is rotated 90 degrees counter-clockwise so the screen's LEFT
+    edge becomes the BOTTOM (landscape use on the Kindle). Old Kindle
+    WebKit has no vh/vw units and ignores the Fullscreen / orientation
+    APIs, so the pixel size + rotate transform are set from JS (rotateApp).
+    Layout uses block flow + CSS tables because that WebKit has no flexbox.
   */
   #wrap {
     position: absolute;
@@ -44,30 +37,25 @@
   }
   #clock {
     text-align: center;
-    font-size: 72px;
+    font-size: 90px;
     font-weight: bold;
     letter-spacing: 2px;
-    padding: 20px 0 10px 0;
+    padding: 40px 0;
     border-bottom: 3px solid #000000;
-  }
-  #status {
-    text-align: center;
-    font-size: 18px;
-    padding: 6px 0 16px 0;
-    text-transform: uppercase;
   }
   #buttons {
     display: table;
     width: 100%;
     table-layout: fixed;
     border-collapse: separate;
-    border-spacing: 6px 0;
+    border-spacing: 8px 0;
+    margin-top: 30px;
   }
   .btn {
     display: table-cell;
     width: 33%;
-    padding: 22px 0;
-    font-size: 22px;
+    padding: 28px 0;
+    font-size: 26px;
     font-weight: bold;
     text-align: center;
     border: 3px solid #000000;
@@ -79,61 +67,15 @@
     background: #000000;
     color: #ffffff;
   }
-  #lapHeader {
-    display: table;
-    width: 100%;
-    table-layout: fixed;
-    font-size: 16px;
-    font-weight: bold;
-    border-bottom: 2px solid #000000;
-    margin-top: 18px;
-  }
-  #lapHeader > div {
-    display: table-cell;
-    padding: 14px 4px 6px 4px;
-  }
-  .lapRow {
-    display: table;
-    width: 100%;
-    table-layout: fixed;
-    padding: 0;
-    border-bottom: 1px solid #000000;
-    font-size: 20px;
-  }
-  .lapRow > div {
-    display: table-cell;
-    padding: 10px 4px;
-  }
-  #lapHeader > div:first-child,
-  .lapRow > div:first-child {
-    width: 60px;
-  }
-  #laps {
-    margin-top: 0;
-  }
-  #empty {
-    text-align: center;
-    padding: 30px 0;
-    font-size: 16px;
-  }
 </style>
 </head>
 <body>
 <div id="wrap">
   <div id="clock">00:00:00</div>
-  <div id="status">Ready</div>
   <div id="buttons">
-    <div class="btn" id="startBtn" onclick="toggleStart()">Start</div>
-    <div class="btn" id="lapBtn" onclick="recordLap()">Split</div>
-    <div class="btn" id="resetBtn" onclick="resetAll()">Reset</div>
-  </div>
-  <div id="lapHeader">
-    <div>#</div>
-    <div>Split</div>
-    <div>Total</div>
-  </div>
-  <div id="laps">
-    <div id="empty">No splits yet</div>
+    <div class="btn" id="startBtn" onclick="startTimer()">Start</div>
+    <div class="btn" id="stopBtn" onclick="stopTimer()">Stop</div>
+    <div class="btn" id="resetBtn" onclick="resetTimer()">Reset</div>
   </div>
 </div>
 
@@ -141,8 +83,6 @@
   var running = false;
   var startTime = 0;
   var elapsedBeforePause = 0;
-  var lastLapTotal = 0;
-  var laps = [];
   var tickHandle = null;
 
   function formatTime(ms) {
@@ -165,77 +105,40 @@
     document.getElementById("clock").innerHTML = formatTime(currentElapsed());
   }
 
-  function toggleStart() {
-    var btn = document.getElementById("startBtn");
-    var status = document.getElementById("status");
-    if (!running) {
-      running = true;
-      startTime = Date.now();
-      btn.innerHTML = "Stop";
-      btn.className = "btn active";
-      status.innerHTML = "Running";
-      tickHandle = setInterval(updateClock, 1000);
-    } else {
-      // Capture elapsed time while still "running" so currentElapsed()
-      // includes the active segment, then stop the clock.
-      elapsedBeforePause = currentElapsed();
-      running = false;
-      clearInterval(tickHandle);
-      btn.innerHTML = "Start";
-      btn.className = "btn";
-      status.innerHTML = "Stopped";
-      updateClock();
-    }
+  function startTimer() {
+    if (running) { return; }
+    running = true;
+    startTime = Date.now();
+    document.getElementById("startBtn").className = "btn active";
+    tickHandle = setInterval(updateClock, 1000);
   }
 
-  function recordLap() {
+  function stopTimer() {
     if (!running) { return; }
-    var total = currentElapsed();
-    var split = total - lastLapTotal;
-    lastLapTotal = total;
-    laps.push({ n: laps.length + 1, split: split, total: total });
-    renderLaps();
+    // Capture elapsed time while still running, then stop the clock.
+    elapsedBeforePause = currentElapsed();
+    running = false;
+    clearInterval(tickHandle);
+    document.getElementById("startBtn").className = "btn";
+    updateClock();
   }
 
-  function renderLaps() {
-    var container = document.getElementById("laps");
-    if (laps.length === 0) {
-      container.innerHTML = "<div id='empty'>No splits yet</div>";
-      return;
-    }
-    var html = "";
-    for (var i = laps.length - 1; i >= 0; i--) {
-      var l = laps[i];
-      html += "<div class='lapRow'><div>" + l.n + "</div><div>" +
-        formatTime(l.split) + "</div><div>" + formatTime(l.total) +
-        "</div></div>";
-    }
-    container.innerHTML = html;
-  }
-
-  function resetAll() {
+  function resetTimer() {
     running = false;
     clearInterval(tickHandle);
     elapsedBeforePause = 0;
-    lastLapTotal = 0;
-    laps = [];
-    document.getElementById("startBtn").innerHTML = "Start";
     document.getElementById("startBtn").className = "btn";
-    document.getElementById("status").innerHTML = "Ready";
-    renderLaps();
     updateClock();
   }
 
   // Rotate the app 90 degrees counter-clockwise so the screen's left edge
   // becomes the bottom. Sized in pixels because the old Kindle browser has
-  // no vh/vw units and ignores the Fullscreen / orientation-lock APIs.
+  // no vh/vw units and ignores the Fullscreen / orientation APIs.
   function rotateApp() {
     var wrap = document.getElementById("wrap");
     var de = document.documentElement;
-    // Read the viewport defensively: the Kindle browser is inconsistent
-    // about which of these it populates. Fall back to the Paperwhite 4's
-    // real visible CSS viewport (~758 x 899, address bar included) if all
-    // else fails. Using the live value adapts to the address bar height.
+    // Read the viewport defensively; fall back to the Paperwhite 4's real
+    // visible CSS viewport (~758 x 899) if the browser reports nothing.
     var w = window.innerWidth || de.clientWidth || 758;
     var h = window.innerHeight || de.clientHeight || 899;
     // After a -90deg rotation the box's width/height are swapped.
