@@ -57,13 +57,13 @@
     vertical-align: bottom;
   }
   #total {
-    font-size: 92px;
+    font-size: 120px;
     font-weight: bold;
     letter-spacing: 2px;
-    padding-bottom: 20px;
+    padding-bottom: 16px;
   }
   #clock {
-    font-size: 240px;
+    font-size: 280px;
     font-weight: bold;
     letter-spacing: 2px;
     line-height: 1;
@@ -197,7 +197,7 @@
     clockEl.innerHTML = splitStr;
     // Shrink the big split clock only once hours appear so it never
     // overflows the width; keep it huge for the common MM:SS case.
-    clockEl.style.fontSize = (splitStr.length > 5 ? "170px" : "240px");
+    clockEl.style.fontSize = (splitStr.length > 5 ? "190px" : "280px");
     document.getElementById("total").innerHTML = formatTime(currentTotal());
   }
 
