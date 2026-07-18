@@ -26,7 +26,7 @@
     / orientation APIs, so the pixel size + rotate transform are set from JS
     (rotateApp). The whole screen is filled with a CSS table layout because
     that WebKit has no flexbox: the clock row expands to take all remaining
-    height, and the bottom row (laps + buttons) is anchored to the bottom.
+    height, and the button row is anchored to the bottom.
   */
   #wrap {
     position: absolute;
@@ -68,17 +68,6 @@
     letter-spacing: 2px;
     line-height: 1;
   }
-  #laps {
-    font-size: 50px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    text-align: center;
-    padding-bottom: 24px;
-    visibility: hidden;
-  }
-  #laps div {
-    padding: 4px 0;
-  }
   #buttons {
     display: table;
     width: 100%;
@@ -88,8 +77,8 @@
   }
   .btn {
     display: table-cell;
-    width: 33%;
-    padding: 80px 0;
+    width: 50%;
+    height: 240px;
     font-size: 60px;
     font-weight: bold;
     text-align: center;
@@ -98,8 +87,15 @@
     color: #000000;
     vertical-align: middle;
   }
-  /* Invisible tap zone in the top-left corner of the (rotated) content that
-     toggles the full lap-history overlay. */
+  /* Recent laps shown inside the Lap button (replaces the flag for 10s). */
+  #lapBtn .lapline {
+    font-size: 38px;
+    font-weight: bold;
+    line-height: 1.3;
+    letter-spacing: 1px;
+  }
+  /* Invisible tap zone across the top of the (rotated) content that toggles
+     the full lap-history overlay. */
   #historyTap {
     position: absolute;
     top: 0;
@@ -136,16 +132,14 @@
     <div id="clockRow">
       <div id="clockCell">
         <div id="total">00:00</div>
-        <div id="clock">00:00</div>
+        <div id="clock" onclick="clockTap()">00:00</div>
       </div>
     </div>
     <div id="btnRow">
       <div id="btnCell">
-        <div id="laps"></div>
         <div id="buttons">
           <div class="btn" id="startBtn" onclick="toggleStart()">&#9654;</div>
           <div class="btn" id="lapBtn" onclick="recordLap()">&#9873;</div>
-          <div class="btn" id="resetBtn" onclick="resetAll()">&#8634;</div>
         </div>
       </div>
     </div>
@@ -163,6 +157,9 @@
   var laps = [];
   var LAPS_SHOWN = 3;
   var lapsHideTimer = null;
+  var lapsVisible = false;
+  var clockTapTime = 0;
+  var FLAG = "\u2691";
 
   function formatTime(ms) {
     var totalSeconds = Math.floor(ms / 1000);
@@ -209,15 +206,35 @@
     btn.innerHTML = isRunning ? "\u25A0" : "\u25B6";
   }
 
-  // Reveal the recent-laps list and (re)start the 10s inactivity auto-hide.
+  // The Lap button shows the flag by default, or the recent laps for 10s
+  // after any button press.
+  function renderLapButton() {
+    var btn = document.getElementById("lapBtn");
+    if (!lapsVisible || laps.length === 0) {
+      btn.innerHTML = FLAG;
+      return;
+    }
+    var html = "";
+    var minIndex = laps.length - LAPS_SHOWN;
+    if (minIndex < 0) { minIndex = 0; }
+    for (var i = laps.length - 1; i >= minIndex; i--) {
+      html += "<div class='lapline'>Lap " + (i + 1) + "  " +
+        formatTime(laps[i]) + "</div>";
+    }
+    btn.innerHTML = html;
+  }
+
+  // Reveal recent laps inside the Lap button and (re)start the 10s auto-hide.
   function showLaps() {
-    document.getElementById("laps").style.visibility = "visible";
+    lapsVisible = true;
+    renderLapButton();
     if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
     lapsHideTimer = setTimeout(hideLaps, 10000);
   }
 
   function hideLaps() {
-    document.getElementById("laps").style.visibility = "hidden";
+    lapsVisible = false;
+    renderLapButton();
   }
 
   // Button 1: Start when stopped, Stop when running.
@@ -252,23 +269,23 @@
     clearInterval(tickHandle);
     setStartLabel(false);
     updateClock();
-    renderLaps();
     showLaps();
   }
 
-  // Show the most recent laps, newest on top (e.g. Lap 3, Lap 2, Lap 1).
-  function renderLaps() {
-    var container = document.getElementById("laps");
-    var html = "";
-    var minIndex = laps.length - LAPS_SHOWN;
-    if (minIndex < 0) { minIndex = 0; }
-    for (var i = laps.length - 1; i >= minIndex; i--) {
-      html += "<div>Lap " + (i + 1) + "  " + formatTime(laps[i]) + "</div>";
+  // Double-tap on the main split clock resets everything. Detected by
+  // counting two taps within 600ms (the Kindle browser has no touch/dblclick
+  // support, so we time consecutive clicks ourselves).
+  function clockTap() {
+    var now = Date.now();
+    if (now - clockTapTime < 600) {
+      clockTapTime = 0;
+      resetAll();
+    } else {
+      clockTapTime = now;
     }
-    container.innerHTML = html;
   }
 
-  // Button 3: Reset. Zeroes both timers, clears laps, and stops.
+  // Reset: zeroes both timers, clears laps, and stops.
   function resetAll() {
     running = false;
     clearInterval(tickHandle);
@@ -277,12 +294,11 @@
     laps = [];
     setStartLabel(false);
     updateClock();
-    renderLaps();
     if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
     hideLaps();
   }
 
-  // Top-corner tap toggles a full-history overlay (all laps, newest on top).
+  // Top tap toggles a full-history overlay (all laps, newest on top).
   function toggleHistory() {
     var h = document.getElementById("history");
     if (h.style.display === "block") {
@@ -328,7 +344,7 @@
 
   rotateApp();
   updateClock();
-  renderLaps();
+  renderLapButton();
 </script>
 </body>
 </html>
