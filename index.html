@@ -231,10 +231,11 @@
     var wrap = document.getElementById("wrap");
     var de = document.documentElement;
     // Read the viewport defensively: the Kindle browser is inconsistent
-    // about which of these it populates. Fall back to the Paperwhite's
-    // typical CSS viewport (~758 x 1024) if all else fails.
+    // about which of these it populates. Fall back to the Paperwhite 4's
+    // real visible CSS viewport (~758 x 899, address bar included) if all
+    // else fails. Using the live value adapts to the address bar height.
     var w = window.innerWidth || de.clientWidth || 758;
-    var h = window.innerHeight || de.clientHeight || 1024;
+    var h = window.innerHeight || de.clientHeight || 899;
     // After a -90deg rotation the box's width/height are swapped.
     wrap.style.width = h + "px";
     wrap.style.height = w + "px";
