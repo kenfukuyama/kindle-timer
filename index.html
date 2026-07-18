@@ -136,7 +136,7 @@
     <div id="clockRow">
       <div id="clockCell">
         <div id="total">00:00</div>
-        <div id="clock">00:00</div>
+        <div id="clock" onclick="clockTap()">00:00</div>
       </div>
     </div>
     <div id="btnRow">
@@ -163,6 +163,7 @@
   var laps = [];
   var LAPS_SHOWN = 3;
   var lapsHideTimer = null;
+  var clockTapTime = 0;
 
   function formatTime(ms) {
     var totalSeconds = Math.floor(ms / 1000);
@@ -280,6 +281,19 @@
     renderLaps();
     if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
     hideLaps();
+  }
+
+  // Double-tap on the main split clock resets everything. Detected by
+  // counting two taps within 600ms (the Kindle browser has no touch/dblclick
+  // support, so we time consecutive clicks ourselves).
+  function clockTap() {
+    var now = Date.now();
+    if (now - clockTapTime < 600) {
+      clockTapTime = 0;
+      resetAll();
+    } else {
+      clockTapTime = now;
+    }
   }
 
   // Top-corner tap toggles a full-history overlay (all laps, newest on top).
