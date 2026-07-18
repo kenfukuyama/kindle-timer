@@ -131,8 +131,8 @@
   <div id="layout">
     <div id="clockRow">
       <div id="clockCell">
-        <div id="total" onclick="armReset()">00:00</div>
-        <div id="clock" onclick="clockTap()">00:00</div>
+        <div id="total" onclick="confirmReset()">00:00</div>
+        <div id="clock" onclick="armReset()">00:00</div>
       </div>
     </div>
     <div id="btnRow">
@@ -273,15 +273,15 @@
     showLaps();
   }
 
-  // Reset is a two-step gesture: tap the total counter to "arm" it, then
-  // tap the main clock to confirm. The armed state expires after 3s.
+  // Reset is a two-step gesture: tap the main clock to "arm" it, then tap
+  // the total counter to confirm. The armed state expires after 3s.
   function armReset() {
     resetArmed = true;
     if (resetArmTimer) { clearTimeout(resetArmTimer); }
     resetArmTimer = setTimeout(function () { resetArmed = false; }, 3000);
   }
 
-  function clockTap() {
+  function confirmReset() {
     if (resetArmed) {
       resetArmed = false;
       if (resetArmTimer) { clearTimeout(resetArmTimer); }
