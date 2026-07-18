@@ -57,18 +57,19 @@
     vertical-align: bottom;
   }
   #total {
-    font-size: 48px;
+    font-size: 92px;
     font-weight: bold;
     letter-spacing: 2px;
-    padding-bottom: 24px;
+    padding-bottom: 20px;
   }
   #clock {
-    font-size: 150px;
+    font-size: 240px;
     font-weight: bold;
     letter-spacing: 2px;
+    line-height: 1;
   }
   #laps {
-    font-size: 40px;
+    font-size: 50px;
     font-weight: bold;
     letter-spacing: 1px;
     padding-top: 26px;
@@ -162,7 +163,12 @@
   }
 
   function updateClock() {
-    document.getElementById("clock").innerHTML = formatTime(currentSplit());
+    var splitStr = formatTime(currentSplit());
+    var clockEl = document.getElementById("clock");
+    clockEl.innerHTML = splitStr;
+    // Shrink the big split clock only once hours appear so it never
+    // overflows the width; keep it huge for the common MM:SS case.
+    clockEl.style.fontSize = (splitStr.length > 5 ? "170px" : "240px");
     document.getElementById("total").innerHTML = formatTime(currentTotal());
   }
 
