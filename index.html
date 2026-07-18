@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>Stopwatch</title>
+<title>Split Timer</title>
 <style>
   * {
     margin: 0;
@@ -46,8 +46,6 @@
   #clockRow, #btnRow {
     display: table-row;
   }
-  /* height:100% makes the clock row soak up all the leftover space so the
-     button row shrinks to its own content and sits at the very bottom. */
   #clockCell {
     display: table-cell;
     height: 100%;
@@ -58,6 +56,17 @@
     display: table-cell;
     vertical-align: bottom;
   }
+  #totalLabel {
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 3px;
+  }
+  #total {
+    font-size: 48px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding-bottom: 24px;
+  }
   #clock {
     font-size: 150px;
     font-weight: bold;
@@ -66,7 +75,6 @@
   #buttons {
     display: table;
     width: 100%;
-    height: 100%;
     table-layout: fixed;
     border-collapse: separate;
     border-spacing: 14px 0;
@@ -74,7 +82,7 @@
   .btn {
     display: table-cell;
     width: 33%;
-    padding: 90px 0;
+    padding: 80px 0;
     font-size: 38px;
     font-weight: bold;
     text-align: center;
@@ -94,15 +102,17 @@
   <div id="layout">
     <div id="clockRow">
       <div id="clockCell">
+        <div id="totalLabel">TOTAL</div>
+        <div id="total">00:00:00</div>
         <div id="clock">00:00:00</div>
       </div>
     </div>
     <div id="btnRow">
       <div id="btnCell">
         <div id="buttons">
-          <div class="btn" id="startBtn" onclick="startTimer()">Start</div>
-          <div class="btn" id="stopBtn" onclick="stopTimer()">Stop</div>
-          <div class="btn" id="resetBtn" onclick="resetTimer()">Reset</div>
+          <div class="btn" id="startBtn" onclick="toggleStart()">Start</div>
+          <div class="btn" id="lapBtn" onclick="recordLap()">Lap</div>
+          <div class="btn" id="resetBtn" onclick="resetAll()">Reset</div>
         </div>
       </div>
     </div>
@@ -112,7 +122,8 @@
 <script>
   var running = false;
   var startTime = 0;
-  var elapsedBeforePause = 0;
+  var totalBeforePause = 0;
+  var splitBeforePause = 0;
   var tickHandle = null;
 
   function formatTime(ms) {
@@ -124,40 +135,69 @@
     return pad(hours) + ":" + pad(minutes) + ":" + pad(seconds);
   }
 
-  function currentElapsed() {
+  // The total and split clocks advance together while running; they differ
+  // only in when they were last reset to zero.
+  function currentTotal() {
     if (running) {
-      return elapsedBeforePause + (Date.now() - startTime);
+      return totalBeforePause + (Date.now() - startTime);
     }
-    return elapsedBeforePause;
+    return totalBeforePause;
+  }
+
+  function currentSplit() {
+    if (running) {
+      return splitBeforePause + (Date.now() - startTime);
+    }
+    return splitBeforePause;
   }
 
   function updateClock() {
-    document.getElementById("clock").innerHTML = formatTime(currentElapsed());
+    document.getElementById("clock").innerHTML = formatTime(currentSplit());
+    document.getElementById("total").innerHTML = formatTime(currentTotal());
   }
 
-  function startTimer() {
-    if (running) { return; }
-    running = true;
-    startTime = Date.now();
-    document.getElementById("startBtn").className = "btn active";
-    tickHandle = setInterval(updateClock, 1000);
+  function setStartLabel(isRunning) {
+    var btn = document.getElementById("startBtn");
+    btn.innerHTML = isRunning ? "Stop" : "Start";
+    btn.className = isRunning ? "btn active" : "btn";
   }
 
-  function stopTimer() {
-    if (!running) { return; }
-    // Capture elapsed time while still running, then stop the clock.
-    elapsedBeforePause = currentElapsed();
+  // Button 1: Start when stopped, Stop when running.
+  function toggleStart() {
+    if (!running) {
+      running = true;
+      startTime = Date.now();
+      setStartLabel(true);
+      tickHandle = setInterval(updateClock, 1000);
+    } else {
+      // Capture both clocks while still running, then stop.
+      totalBeforePause = currentTotal();
+      splitBeforePause = currentSplit();
+      running = false;
+      clearInterval(tickHandle);
+      setStartLabel(false);
+      updateClock();
+    }
+  }
+
+  // Button 2: Lap. Pauses both timers and resets the split back to 0,
+  // leaving the total frozen at its current value.
+  function recordLap() {
+    totalBeforePause = currentTotal();
+    splitBeforePause = 0;
     running = false;
     clearInterval(tickHandle);
-    document.getElementById("startBtn").className = "btn";
+    setStartLabel(false);
     updateClock();
   }
 
-  function resetTimer() {
+  // Button 3: Reset. Zeroes both timers and stops.
+  function resetAll() {
     running = false;
     clearInterval(tickHandle);
-    elapsedBeforePause = 0;
-    document.getElementById("startBtn").className = "btn";
+    totalBeforePause = 0;
+    splitBeforePause = 0;
+    setStartLabel(false);
     updateClock();
   }
 
