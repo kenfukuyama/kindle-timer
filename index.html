@@ -13,19 +13,19 @@
   }
   html, body {
     width: 100%;
-    height: 100%;
     background: #ffffff;
     color: #000000;
     font-family: "Courier New", monospace;
-    overflow: hidden;
   }
+  /*
+    Layout uses normal block flow + CSS tables instead of flexbox.
+    The Kindle "experimental browser" runs a very old WebKit that only
+    supports the 2009 flexbox spec (display:-webkit-box), whose default
+    orientation is horizontal. That made every section sit side-by-side.
+    Block flow (vertical) + display:table (equal columns) is understood
+    by both ancient and modern browsers, so it renders correctly on all.
+  */
   #wrap {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: flex;
-    -webkit-flex-direction: column;
-    flex-direction: column;
-    height: 100%;
     padding: 20px;
   }
   #clock {
@@ -43,16 +43,15 @@
     text-transform: uppercase;
   }
   #buttons {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: flex;
-    -webkit-justify-content: space-between;
-    justify-content: space-between;
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 6px 0;
   }
   .btn {
-    -webkit-flex: 1;
-    flex: 1;
-    margin: 0 6px;
+    display: table-cell;
+    width: 33%;
     padding: 22px 0;
     font-size: 22px;
     font-weight: bold;
@@ -60,43 +59,43 @@
     border: 3px solid #000000;
     background: #ffffff;
     color: #000000;
+    vertical-align: middle;
   }
-  .btn:first-child { margin-left: 0; }
-  .btn:last-child { margin-right: 0; }
   .btn.active {
     background: #000000;
     color: #ffffff;
   }
   #lapHeader {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: flex;
+    display: table;
+    width: 100%;
+    table-layout: fixed;
     font-size: 16px;
     font-weight: bold;
     border-bottom: 2px solid #000000;
-    padding: 14px 4px 6px 4px;
     margin-top: 18px;
   }
-  #lapHeader div, .lapRow div {
-    -webkit-flex: 1;
-    flex: 1;
-  }
-  #lapHeader div:first-child, .lapRow div:first-child {
-    -webkit-flex: 0 0 60px;
-    flex: 0 0 60px;
-  }
-  #laps {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow-y: auto;
-    font-size: 20px;
+  #lapHeader > div {
+    display: table-cell;
+    padding: 14px 4px 6px 4px;
   }
   .lapRow {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: flex;
-    padding: 10px 4px;
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    padding: 0;
     border-bottom: 1px solid #000000;
+    font-size: 20px;
+  }
+  .lapRow > div {
+    display: table-cell;
+    padding: 10px 4px;
+  }
+  #lapHeader > div:first-child,
+  .lapRow > div:first-child {
+    width: 60px;
+  }
+  #laps {
+    margin-top: 0;
   }
   #empty {
     text-align: center;
