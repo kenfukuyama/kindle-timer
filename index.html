@@ -128,10 +128,9 @@
     updateClock();
   }
 
-  // Rotate the app 90 degrees clockwise so that, when the Kindle is turned
-  // with its original left edge pointing down, the content reads upright.
-  // Sized in pixels because the old Kindle browser has no vh/vw units and
-  // ignores the Fullscreen / orientation APIs.
+  // Rotate the app 90 degrees counter-clockwise so the screen's LEFT edge
+  // becomes the BOTTOM. Sized in pixels because the old Kindle browser has
+  // no vh/vw units and ignores the Fullscreen / orientation APIs.
   function rotateApp() {
     var wrap = document.getElementById("wrap");
     var de = document.documentElement;
@@ -139,10 +138,10 @@
     // visible CSS viewport (~758 x 899) if the browser reports nothing.
     var w = window.innerWidth || de.clientWidth || 758;
     var h = window.innerHeight || de.clientHeight || 899;
-    // After a 90deg rotation the box's width/height are swapped.
+    // After a -90deg rotation the box's width/height are swapped.
     wrap.style.width = h + "px";
     wrap.style.height = w + "px";
-    var t = "translateX(" + w + "px) rotate(90deg)";
+    var t = "translateY(" + h + "px) rotate(-90deg)";
     wrap.style.webkitTransform = t;
     wrap.style.transform = t;
   }
