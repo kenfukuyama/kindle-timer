@@ -67,6 +67,15 @@
     font-weight: bold;
     letter-spacing: 2px;
   }
+  #laps {
+    font-size: 40px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding-top: 26px;
+  }
+  #laps div {
+    padding: 4px 0;
+  }
   #buttons {
     display: table;
     width: 100%;
@@ -99,6 +108,7 @@
       <div id="clockCell">
         <div id="total">00:00</div>
         <div id="clock">00:00</div>
+        <div id="laps"></div>
       </div>
     </div>
     <div id="btnRow">
@@ -119,6 +129,8 @@
   var totalBeforePause = 0;
   var splitBeforePause = 0;
   var tickHandle = null;
+  var laps = [];
+  var LAPS_SHOWN = 3;
 
   function formatTime(ms) {
     var totalSeconds = Math.floor(ms / 1000);
@@ -178,25 +190,44 @@
     }
   }
 
-  // Button 2: Lap. Pauses both timers and resets the split back to 0,
-  // leaving the total frozen at its current value.
+  // Button 2: Lap. Records the current split, then pauses both timers and
+  // resets the split back to 0, leaving the total frozen at its value.
   function recordLap() {
+    var split = currentSplit();
+    if (split > 0) {
+      laps.push(split);
+    }
     totalBeforePause = currentTotal();
     splitBeforePause = 0;
     running = false;
     clearInterval(tickHandle);
     setStartLabel(false);
     updateClock();
+    renderLaps();
   }
 
-  // Button 3: Reset. Zeroes both timers and stops.
+  // Show the most recent laps, newest on top (e.g. Lap 3, Lap 2, Lap 1).
+  function renderLaps() {
+    var container = document.getElementById("laps");
+    var html = "";
+    var minIndex = laps.length - LAPS_SHOWN;
+    if (minIndex < 0) { minIndex = 0; }
+    for (var i = laps.length - 1; i >= minIndex; i--) {
+      html += "<div>Lap " + (i + 1) + "  " + formatTime(laps[i]) + "</div>";
+    }
+    container.innerHTML = html;
+  }
+
+  // Button 3: Reset. Zeroes both timers, clears laps, and stops.
   function resetAll() {
     running = false;
     clearInterval(tickHandle);
     totalBeforePause = 0;
     splitBeforePause = 0;
+    laps = [];
     setStartLabel(false);
     updateClock();
+    renderLaps();
   }
 
   // Rotate the app 90 degrees clockwise (Version B) so the content reads
@@ -222,6 +253,7 @@
 
   rotateApp();
   updateClock();
+  renderLaps();
 </script>
 </body>
 </html>
