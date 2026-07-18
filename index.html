@@ -20,40 +20,63 @@
     font-family: "Courier New", monospace;
   }
   /*
-    The app is rotated 90 degrees counter-clockwise so the screen's LEFT
-    edge becomes the BOTTOM (landscape use on the Kindle). Old Kindle
-    WebKit has no vh/vw units and ignores the Fullscreen / orientation
-    APIs, so the pixel size + rotate transform are set from JS (rotateApp).
-    Layout uses block flow + CSS tables because that WebKit has no flexbox.
+    The app is rotated 90 degrees clockwise (Version B) so the content reads
+    upright with the screen's left edge at the bottom (landscape use on the
+    Kindle). Old Kindle WebKit has no vh/vw units and ignores the Fullscreen
+    / orientation APIs, so the pixel size + rotate transform are set from JS
+    (rotateApp). The whole screen is filled with a CSS table layout because
+    that WebKit has no flexbox: the clock row expands to take all remaining
+    height, and the button row is anchored to the bottom.
   */
   #wrap {
     position: absolute;
     top: 0;
     left: 0;
-    padding: 20px;
+    padding: 16px;
     overflow: hidden;
     -webkit-transform-origin: top left;
     transform-origin: top left;
   }
-  #clock {
+  #layout {
+    display: table;
+    width: 100%;
+    height: 100%;
+    table-layout: fixed;
+  }
+  #clockRow, #btnRow {
+    display: table-row;
+  }
+  /* height:100% makes the clock row soak up all the leftover space so the
+     button row shrinks to its own content and sits at the very bottom. */
+  #clockCell {
+    display: table-cell;
+    height: 100%;
+    vertical-align: middle;
     text-align: center;
-    font-size: 96px;
+  }
+  #btnCell {
+    display: table-cell;
+    vertical-align: bottom;
+  }
+  #clock {
+    font-size: 150px;
     font-weight: bold;
     letter-spacing: 2px;
-    padding: 70px 0 60px 0;
   }
   #buttons {
     display: table;
     width: 100%;
+    height: 100%;
     table-layout: fixed;
     border-collapse: separate;
-    border-spacing: 12px 0;
+    border-spacing: 14px 0;
   }
   .btn {
     display: table-cell;
     width: 33%;
-    padding: 26px 0;
-    font-size: 24px;
+    padding: 90px 0;
+    font-size: 38px;
+    font-weight: bold;
     text-align: center;
     border: 2px solid #000000;
     background: #ffffff;
@@ -68,11 +91,21 @@
 </head>
 <body>
 <div id="wrap">
-  <div id="clock">00:00:00</div>
-  <div id="buttons">
-    <div class="btn" id="startBtn" onclick="startTimer()">Start</div>
-    <div class="btn" id="stopBtn" onclick="stopTimer()">Stop</div>
-    <div class="btn" id="resetBtn" onclick="resetTimer()">Reset</div>
+  <div id="layout">
+    <div id="clockRow">
+      <div id="clockCell">
+        <div id="clock">00:00:00</div>
+      </div>
+    </div>
+    <div id="btnRow">
+      <div id="btnCell">
+        <div id="buttons">
+          <div class="btn" id="startBtn" onclick="startTimer()">Start</div>
+          <div class="btn" id="stopBtn" onclick="stopTimer()">Stop</div>
+          <div class="btn" id="resetBtn" onclick="resetTimer()">Reset</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -128,9 +161,10 @@
     updateClock();
   }
 
-  // Rotate the app 90 degrees counter-clockwise so the screen's LEFT edge
-  // becomes the BOTTOM. Sized in pixels because the old Kindle browser has
-  // no vh/vw units and ignores the Fullscreen / orientation APIs.
+  // Rotate the app 90 degrees clockwise (Version B) so the content reads
+  // upright with the left edge at the bottom. Sized in pixels because the
+  // old Kindle browser has no vh/vw units and ignores the Fullscreen /
+  // orientation APIs.
   function rotateApp() {
     var wrap = document.getElementById("wrap");
     var de = document.documentElement;
@@ -138,10 +172,10 @@
     // visible CSS viewport (~758 x 899) if the browser reports nothing.
     var w = window.innerWidth || de.clientWidth || 758;
     var h = window.innerHeight || de.clientHeight || 899;
-    // After a -90deg rotation the box's width/height are swapped.
+    // After a 90deg rotation the box's width/height are swapped.
     wrap.style.width = h + "px";
     wrap.style.height = w + "px";
-    var t = "translateY(" + h + "px) rotate(-90deg)";
+    var t = "translateX(" + w + "px) rotate(90deg)";
     wrap.style.webkitTransform = t;
     wrap.style.transform = t;
   }
