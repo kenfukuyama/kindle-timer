@@ -176,8 +176,10 @@
       status.innerHTML = "Running";
       tickHandle = setInterval(updateClock, 1000);
     } else {
-      running = false;
+      // Capture elapsed time while still "running" so currentElapsed()
+      // includes the active segment, then stop the clock.
       elapsedBeforePause = currentElapsed();
+      running = false;
       clearInterval(tickHandle);
       btn.innerHTML = "Start";
       btn.className = "btn";
