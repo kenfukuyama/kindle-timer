@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Split Timer</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    color: #000000;
+    font-family: "Courier New", monospace;
+    overflow: hidden;
+  }
+  #wrap {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+  }
+  #clock {
+    text-align: center;
+    font-size: 72px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 20px 0 10px 0;
+    border-bottom: 3px solid #000000;
+  }
+  #status {
+    text-align: center;
+    font-size: 18px;
+    padding: 6px 0 16px 0;
+    text-transform: uppercase;
+  }
+  #buttons {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-justify-content: space-between;
+    justify-content: space-between;
+  }
+  .btn {
+    -webkit-flex: 1;
+    flex: 1;
+    margin: 0 6px;
+    padding: 22px 0;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    border: 3px solid #000000;
+    background: #ffffff;
+    color: #000000;
+  }
+  .btn:first-child { margin-left: 0; }
+  .btn:last-child { margin-right: 0; }
+  .btn.active {
+    background: #000000;
+    color: #ffffff;
+  }
+  #lapHeader {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    font-size: 16px;
+    font-weight: bold;
+    border-bottom: 2px solid #000000;
+    padding: 14px 4px 6px 4px;
+    margin-top: 18px;
+  }
+  #lapHeader div, .lapRow div {
+    -webkit-flex: 1;
+    flex: 1;
+  }
+  #lapHeader div:first-child, .lapRow div:first-child {
+    -webkit-flex: 0 0 60px;
+    flex: 0 0 60px;
+  }
+  #laps {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow-y: auto;
+    font-size: 20px;
+  }
+  .lapRow {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    padding: 10px 4px;
+    border-bottom: 1px solid #000000;
+  }
+  #empty {
+    text-align: center;
+    padding: 30px 0;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="clock">00:00:00</div>
+  <div id="status">Ready</div>
+  <div id="buttons">
+    <div class="btn" id="startBtn" onclick="toggleStart()">Start</div>
+    <div class="btn" id="lapBtn" onclick="recordLap()">Split</div>
+    <div class="btn" id="resetBtn" onclick="resetAll()">Reset</div>
+  </div>
+  <div id="lapHeader">
+    <div>#</div>
+    <div>Split</div>
+    <div>Total</div>
+  </div>
+  <div id="laps">
+    <div id="empty">No splits yet</div>
+  </div>
+</div>
+
+<script>
+  var running = false;
+  var startTime = 0;
+  var elapsedBeforePause = 0;
+  var lastLapTotal = 0;
+  var laps = [];
+  var tickHandle = null;
+
+  function formatTime(ms) {
+    var totalSeconds = Math.floor(ms / 1000);
+    var hours = Math.floor(totalSeconds / 3600);
+    var minutes = Math.floor((totalSeconds % 3600) / 60);
+    var seconds = totalSeconds % 60;
+    function pad(n) { return n < 10 ? "0" + n : "" + n; }
+    return pad(hours) + ":" + pad(minutes) + ":" + pad(seconds);
+  }
+
+  function currentElapsed() {
+    if (running) {
+      return elapsedBeforePause + (Date.now() - startTime);
+    }
+    return elapsedBeforePause;
+  }
+
+  function updateClock() {
+    document.getElementById("clock").innerHTML = formatTime(currentElapsed());
+  }
+
+  function toggleStart() {
+    var btn = document.getElementById("startBtn");
+    var status = document.getElementById("status");
+    if (!running) {
+      running = true;
+      startTime = Date.now();
+      btn.innerHTML = "Stop";
+      btn.className = "btn active";
+      status.innerHTML = "Running";
+      tickHandle = setInterval(updateClock, 1000);
+    } else {
+      running = false;
+      elapsedBeforePause = currentElapsed();
+      clearInterval(tickHandle);
+      btn.innerHTML = "Start";
+      btn.className = "btn";
+      status.innerHTML = "Stopped";
+      updateClock();
+    }
+  }
+
+  function recordLap() {
+    if (!running) { return; }
+    var total = currentElapsed();
+    var split = total - lastLapTotal;
+    lastLapTotal = total;
+    laps.push({ n: laps.length + 1, split: split, total: total });
+    renderLaps();
+  }
+
+  function renderLaps() {
+    var container = document.getElementById("laps");
+    if (laps.length === 0) {
+      container.innerHTML = "<div id='empty'>No splits yet</div>";
+      return;
+    }
+    var html = "";
+    for (var i = laps.length - 1; i >= 0; i--) {
+      var l = laps[i];
+      html += "<div class='lapRow'><div>" + l.n + "</div><div>" +
+        formatTime(l.split) + "</div><div>" + formatTime(l.total) +
+        "</div></div>";
+    }
+    container.innerHTML = html;
+  }
+
+  function resetAll() {
+    running = false;
+    clearInterval(tickHandle);
+    elapsedBeforePause = 0;
+    lastLapTotal = 0;
+    laps = [];
+    document.getElementById("startBtn").innerHTML = "Start";
+    document.getElementById("startBtn").className = "btn";
+    document.getElementById("status").innerHTML = "Ready";
+    renderLaps();
+    updateClock();
+  }
+
+  updateClock();
+</script>
+</body>
+</html>
