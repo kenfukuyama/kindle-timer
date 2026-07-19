@@ -161,31 +161,39 @@
     width: 100%;
     height: 100%;
     background: #ffffff;
-    padding: 40px;
+    padding: 24px;
     overflow-y: auto;
     z-index: 16;
   }
-  /* +/- row for fine-tuning a custom total time. */
+  /* The adjust menu is compact so all controls fit without scrolling. */
+  #adjust .menuInfo {
+    font-size: 44px;
+    padding: 4px 4px 10px 4px;
+  }
+  /* A row of equal-width buttons (presets, +/- steps, confirm/cancel). */
   #adjust .stepRow {
     display: table;
     width: 100%;
     table-layout: fixed;
     border-collapse: separate;
-    border-spacing: 14px 0;
-    margin: 16px 0;
+    border-spacing: 10px 0;
+    margin: 8px 0;
     border-bottom: none;
     padding: 0;
   }
   #adjust .stepRow .stepBtn {
     display: table-cell;
-    width: 50%;
     vertical-align: middle;
     text-align: center;
-    font-size: 54px;
+    font-size: 40px;
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: 0;
     border: 2px solid #000000;
-    padding: 28px 8px;
+    padding: 20px 2px;
+  }
+  /* Small square cancel (X) button in the confirm row. */
+  #adjust .stepRow .cancelBtn {
+    width: 120px;
   }
 </style>
 </head>
@@ -453,38 +461,35 @@
   }
 
   function renderAdjust() {
-    var html = "<div class='menuTitle'>Adjust stopwatch</div>";
-    html += "<div class='menuInfo'>Total  <span id='adjustTotal'>" +
+    var html = "<div class='menuInfo'>Total  <span id='adjustTotal'>" +
       formatTime(currentTotal()) + "</span></div>";
     // Presets only load the draft; they do not change the stopwatch yet.
-    html += "<div class='menuBtn' onclick='setDraft(30 * 60 * 1000)'>30 min</div>";
-    html += "<div class='menuBtn' onclick='setDraft(60 * 60 * 1000)'>1 hour</div>";
-    html += "<div class='menuBtn' onclick='setDraft(120 * 60 * 1000)'>2 hours</div>";
-    html += "<div class='menuTitle'>Custom</div>";
+    html += "<div class='stepRow'>";
+    html += "<div class='stepBtn' onclick='setDraft(30 * 60 * 1000)'>30m</div>";
+    html += "<div class='stepBtn' onclick='setDraft(60 * 60 * 1000)'>1h</div>";
+    html += "<div class='stepBtn' onclick='setDraft(120 * 60 * 1000)'>2h</div>";
+    html += "</div>";
     html += "<div class='menuInfo'>" + formatTime(adjustDraftMs) + "</div>";
+    // Plus row then minus row, one column per unit (1h/10m/1m/10s/1s).
     html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-3600)'>-1h</div>";
     html += "<div class='stepBtn' onclick='nudgeAdjust(3600)'>+1h</div>";
-    html += "</div>";
-    html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-600)'>-10m</div>";
     html += "<div class='stepBtn' onclick='nudgeAdjust(600)'>+10m</div>";
-    html += "</div>";
-    html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-60)'>-1m</div>";
     html += "<div class='stepBtn' onclick='nudgeAdjust(60)'>+1m</div>";
-    html += "</div>";
-    html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-10)'>-10s</div>";
     html += "<div class='stepBtn' onclick='nudgeAdjust(10)'>+10s</div>";
-    html += "</div>";
-    html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-1)'>-1s</div>";
     html += "<div class='stepBtn' onclick='nudgeAdjust(1)'>+1s</div>";
     html += "</div>";
-    html += "<div class='menuBtn' onclick='applyTotalTime(adjustDraftMs)'>Set to " +
+    html += "<div class='stepRow'>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-3600)'>-1h</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-600)'>-10m</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-60)'>-1m</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-10)'>-10s</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-1)'>-1s</div>";
+    html += "</div>";
+    html += "<div class='stepRow'>";
+    html += "<div class='stepBtn' onclick='applyTotalTime(adjustDraftMs)'>Set to " +
       formatTime(adjustDraftMs) + "</div>";
-    html += "<div class='menuBtn' onclick='hideAdjust()'>Cancel</div>";
+    html += "<div class='stepBtn cancelBtn' onclick='hideAdjust()'>\u2715</div>";
+    html += "</div>";
     document.getElementById("adjust").innerHTML = html;
   }
 
