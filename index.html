@@ -171,6 +171,30 @@
     font-size: 64px;
     padding: 10px 4px 20px 4px;
   }
+  /* Top row: X on the right, Total centered (a matching-width spacer on
+     the left keeps Total visually centered). */
+  #adjust .topRow {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 16px 0;
+    margin: 4px 0 16px 0;
+  }
+  #adjust .topRow .topCell {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 64px;
+    font-weight: bold;
+  }
+  #adjust .topRow .topSide {
+    width: 180px;
+  }
+  #adjust .topRow .topX {
+    border: 2px solid #000000;
+    padding: 30px 4px;
+  }
   /* A row of equal-width buttons (presets, +/- steps, confirm/cancel). */
   #adjust .stepRow {
     display: table;
@@ -462,8 +486,13 @@
   }
 
   function renderAdjust() {
-    var html = "<div class='menuInfo'>Total  <span id='adjustTotal'>" +
+    // Top row: centered Total with a close (X) button on the right.
+    var html = "<div class='topRow'>";
+    html += "<div class='topCell topSide'></div>";
+    html += "<div class='topCell'>Total  <span id='adjustTotal'>" +
       formatTime(currentTotal()) + "</span></div>";
+    html += "<div class='topCell topSide topX' onclick='hideAdjust()'>\u2715</div>";
+    html += "</div>";
     // Presets only load the draft; they do not change the stopwatch yet.
     html += "<div class='stepRow'>";
     html += "<div class='stepBtn' onclick='setDraft(30 * 60 * 1000)'>30m</div>";
@@ -479,7 +508,6 @@
     html += "<div class='stepRow'>";
     html += "<div class='stepBtn' onclick='applyTotalTime(adjustDraftMs)'>Set to " +
       formatTime(adjustDraftMs) + "</div>";
-    html += "<div class='stepBtn cancelBtn' onclick='hideAdjust()'>\u2715</div>";
     html += "</div>";
     document.getElementById("adjust").innerHTML = html;
   }
