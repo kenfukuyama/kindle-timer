@@ -7,7 +7,10 @@ browser.
 
 ## Features
 
-- Start / Stop / Reset — that's it
+- Start / Stop / Lap / Reset
+- Lap menu (tap the top of the screen): view all laps, or **Adjust stopwatch**
+  to set the total to a specific time (30 min / 1 hour / 2 hours, or custom
+  ±5 minute steps)
 - Rotated sideways (the screen's left edge becomes the bottom) for landscape use
 - No dependencies — pure HTML, CSS, and vanilla JavaScript
 - Built to work on the old Kindle WebKit (no flexbox, no `vh`/`vw`, no arrow
