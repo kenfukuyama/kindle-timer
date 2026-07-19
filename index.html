@@ -419,8 +419,7 @@
       h.style.display = "none";
       return;
     }
-    var html = "<div class='menuTitle'>Lap menu</div>";
-    html += "<div class='menuInfo'>Total  <span id='historyTotal'>" +
+    var html = "<div class='menuInfo'>Total  <span id='historyTotal'>" +
       formatTime(currentTotal()) + "</span></div>";
     html += "<div class='menuBtn' onclick='openAdjust(event)'>Adjust stopwatch</div>";
     if (laps.length === 0) {
