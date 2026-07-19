@@ -116,13 +116,70 @@
     overflow-y: auto;
     z-index: 15;
   }
-  #history div {
+  #history div, #adjust div {
     font-size: 54px;
     font-weight: bold;
     letter-spacing: 1px;
     padding: 14px 4px;
     border-bottom: 2px solid #000000;
     text-align: center;
+  }
+  /* Action rows in the lap / adjust menus (larger tap targets). */
+  #history .menuBtn, #adjust .menuBtn {
+    font-size: 54px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 28px 8px;
+    margin: 16px 0;
+    border: 2px solid #000000;
+    border-bottom: 2px solid #000000;
+    text-align: center;
+    background: #ffffff;
+  }
+  #history .menuTitle, #adjust .menuTitle {
+    font-size: 48px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 8px 4px 24px 4px;
+    border-bottom: none;
+    text-align: center;
+  }
+  #adjust {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    padding: 40px;
+    overflow-y: auto;
+    z-index: 16;
+  }
+  /* +/- row for fine-tuning a custom total time. */
+  #adjust .stepRow {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 14px 0;
+    margin: 16px 0;
+    border-bottom: none;
+    padding: 0;
+  }
+  #adjust .stepRow .stepBtn,
+  #adjust .stepRow .stepVal {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 54px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border: 2px solid #000000;
+    padding: 28px 8px;
+  }
+  #adjust .stepRow .stepVal {
+    width: 50%;
   }
 </style>
 </head>
@@ -146,6 +203,7 @@
   </div>
   <div id="historyTap" onclick="toggleHistory()"></div>
   <div id="history" onclick="hideHistory()"></div>
+  <div id="adjust"></div>
 </div>
 
 <script>
@@ -164,6 +222,8 @@
   var availWidth = 800;
   var lastSplitLen = -1;
   var lastTotalLen = -1;
+  // Draft total used while fine-tuning in the Adjust stopwatch menu.
+  var adjustDraftMs = 0;
 
   function formatTime(ms) {
     var totalSeconds = Math.floor(ms / 1000);
@@ -324,16 +384,34 @@
     hideLaps();
   }
 
-  // Top tap toggles a full-history overlay (all laps, newest on top).
+  // Stop event bubbling so a menu button tap does not also dismiss the
+  // parent overlay (old WebKit uses cancelBubble).
+  function stopBubble(e) {
+    e = e || window.event;
+    if (e) {
+      if (e.stopPropagation) { e.stopPropagation(); }
+      e.cancelBubble = true;
+    }
+  }
+
+  // Top tap toggles a full-history overlay (lap menu). Includes an
+  // "Adjust stopwatch" action above the lap list. If Adjust is open,
+  // the same tap dismisses it first.
   function toggleHistory() {
+    var a = document.getElementById("adjust");
+    if (a.style.display === "block") {
+      hideAdjust();
+      return;
+    }
     var h = document.getElementById("history");
     if (h.style.display === "block") {
       h.style.display = "none";
       return;
     }
-    var html = "";
+    var html = "<div class='menuTitle'>Lap menu</div>";
+    html += "<div class='menuBtn' onclick='openAdjust(event)'>Adjust stopwatch</div>";
     if (laps.length === 0) {
-      html = "<div>No laps yet</div>";
+      html += "<div>No laps yet</div>";
     } else {
       for (var i = laps.length - 1; i >= 0; i--) {
         html += "<div>Lap " + (i + 1) + "  " + formatTime(laps[i]) + "</div>";
@@ -345,6 +423,63 @@
 
   function hideHistory() {
     document.getElementById("history").style.display = "none";
+  }
+
+  // Open the Adjust stopwatch menu (presets + fine-tune). Seed the draft
+  // from the current total so +/- starts at a useful value.
+  function openAdjust(e) {
+    stopBubble(e);
+    hideHistory();
+    adjustDraftMs = currentTotal();
+    // If the clock is still at zero, default the draft to 30 minutes.
+    if (adjustDraftMs <= 0) {
+      adjustDraftMs = 30 * 60 * 1000;
+    }
+    renderAdjust();
+    document.getElementById("adjust").style.display = "block";
+  }
+
+  function hideAdjust() {
+    document.getElementById("adjust").style.display = "none";
+  }
+
+  function renderAdjust() {
+    var html = "<div class='menuTitle'>Adjust stopwatch</div>";
+    html += "<div class='menuBtn' onclick='applyTotalTime(30 * 60 * 1000)'>30 min</div>";
+    html += "<div class='menuBtn' onclick='applyTotalTime(60 * 60 * 1000)'>1 hour</div>";
+    html += "<div class='menuBtn' onclick='applyTotalTime(120 * 60 * 1000)'>2 hours</div>";
+    html += "<div class='menuTitle'>Custom</div>";
+    html += "<div class='stepRow'>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-5)'>-5m</div>";
+    html += "<div class='stepVal'>" + formatTime(adjustDraftMs) + "</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(5)'>+5m</div>";
+    html += "</div>";
+    html += "<div class='menuBtn' onclick='applyTotalTime(adjustDraftMs)'>Set to " +
+      formatTime(adjustDraftMs) + "</div>";
+    html += "<div class='menuBtn' onclick='hideAdjust()'>Cancel</div>";
+    document.getElementById("adjust").innerHTML = html;
+  }
+
+  // Change the custom draft by deltaMinutes (clamped at 0).
+  function nudgeAdjust(deltaMinutes) {
+    adjustDraftMs += deltaMinutes * 60 * 1000;
+    if (adjustDraftMs < 0) { adjustDraftMs = 0; }
+    renderAdjust();
+  }
+
+  // Set the stopwatch total to a specific time. Pauses both clocks and
+  // zeroes the split so the next lap starts clean from the new total.
+  function applyTotalTime(ms) {
+    if (ms < 0) { ms = 0; }
+    running = false;
+    clearInterval(tickHandle);
+    totalBeforePause = ms;
+    splitBeforePause = 0;
+    setStartLabel(false);
+    updateClock();
+    hideAdjust();
+    hideHistory();
+    showLaps();
   }
 
   // Rotate the app 90 degrees clockwise (Version B) so the content reads
