@@ -464,20 +464,24 @@
     html += "<div class='menuTitle'>Custom</div>";
     html += "<div class='menuInfo'>" + formatTime(adjustDraftMs) + "</div>";
     html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-60)'>-1h</div>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(60)'>+1h</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-3600)'>-1h</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(3600)'>+1h</div>";
     html += "</div>";
     html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-10)'>-10m</div>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(10)'>+10m</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-600)'>-10m</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(600)'>+10m</div>";
     html += "</div>";
     html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-5)'>-5m</div>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(5)'>+5m</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-60)'>-1m</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(60)'>+1m</div>";
     html += "</div>";
     html += "<div class='stepRow'>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(-1)'>-1m</div>";
-    html += "<div class='stepBtn' onclick='nudgeAdjust(1)'>+1m</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-10)'>-10s</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(10)'>+10s</div>";
+    html += "</div>";
+    html += "<div class='stepRow'>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-1)'>-1s</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(1)'>+1s</div>";
     html += "</div>";
     html += "<div class='menuBtn' onclick='applyTotalTime(adjustDraftMs)'>Set to " +
       formatTime(adjustDraftMs) + "</div>";
@@ -491,9 +495,9 @@
     renderAdjust();
   }
 
-  // Change the custom draft by deltaMinutes (clamped at 0).
-  function nudgeAdjust(deltaMinutes) {
-    adjustDraftMs += deltaMinutes * 60 * 1000;
+  // Change the custom draft by deltaSeconds (clamped at 0).
+  function nudgeAdjust(deltaSeconds) {
+    adjustDraftMs += deltaSeconds * 1000;
     if (adjustDraftMs < 0) { adjustDraftMs = 0; }
     renderAdjust();
   }
