@@ -186,16 +186,16 @@
     display: table-cell;
     vertical-align: middle;
     text-align: center;
-    font-size: 64px;
+    font-size: 40px;
     font-weight: bold;
     border-bottom: none;
   }
   #adjust .topRow .topSide {
-    width: 180px;
+    width: 120px;
   }
   #adjust .topRow .topX {
     border: 2px solid #000000;
-    padding: 30px 4px;
+    padding: 18px 4px;
   }
   /* A row of equal-width buttons (presets, +/- steps, confirm/cancel). */
   #adjust .stepRow {
@@ -479,8 +479,9 @@
     stopBubble(e);
     hideHistory();
     adjustDraftMs = 0;
-    renderAdjust();
+    // Display first so renderAdjust can measure the overlay for auto-fit.
     document.getElementById("adjust").style.display = "block";
+    renderAdjust();
   }
 
   function hideAdjust() {
@@ -512,6 +513,7 @@
       formatTime(adjustDraftMs) + "</div>";
     html += "</div>";
     document.getElementById("adjust").innerHTML = html;
+    fitAdjustRows();
   }
 
   // Build one +/- row for a single unit (e.g. seconds is 1, label "1s").
@@ -520,6 +522,45 @@
       "<div class='stepBtn' onclick='nudgeAdjust(" + (-seconds) + ")'>-" + label + "</div>" +
       "<div class='stepBtn' onclick='nudgeAdjust(" + seconds + ")'>+" + label + "</div>" +
       "</div>";
+  }
+
+  // Auto-fit: size every row so the whole menu fills the overlay height
+  // exactly, regardless of the Kindle's screen size (no clipping, no
+  // scrolling). Rows share the height evenly; the Total row uses a
+  // slightly smaller font than the buttons.
+  function fitAdjustRows() {
+    var adj = document.getElementById("adjust");
+    if (adj.style.display !== "block") { return; }
+    var rows = [];
+    var kids = adj.childNodes;
+    for (var i = 0; i < kids.length; i++) {
+      if (kids[i].nodeType === 1) { rows.push(kids[i]); }
+    }
+    var n = rows.length;
+    if (n === 0) { return; }
+    var pad = 24;   // #adjust top/bottom padding
+    var gap = 8;    // vertical gap contributed by each row's margins
+    var availH = adj.clientHeight - pad * 2;
+    if (availH <= 0) { return; }
+    var rowH = Math.floor((availH - gap * n) / n);
+    if (rowH < 24) { rowH = 24; }
+    var font = Math.floor(rowH * 0.44);
+    if (font > 76) { font = 76; }
+    for (var r = 0; r < n; r++) {
+      var row = rows[r];
+      var isTop = row.className.indexOf("topRow") !== -1;
+      row.style.margin = (gap / 2) + "px 0";
+      row.style.height = rowH + "px";
+      var cellFont = isTop ? Math.floor(font * 0.68) : font;
+      var cells = row.childNodes;
+      for (var c = 0; c < cells.length; c++) {
+        if (cells[c].nodeType !== 1) { continue; }
+        cells[c].style.height = rowH + "px";
+        cells[c].style.paddingTop = "0";
+        cells[c].style.paddingBottom = "0";
+        cells[c].style.fontSize = cellFont + "px";
+      }
+    }
   }
 
   // Load a preset amount into the draft without touching the stopwatch.
@@ -577,6 +618,8 @@
     lastSplitLen = -1;
     lastTotalLen = -1;
     updateClock();
+    // Re-fit the adjust menu rows if it is open.
+    fitAdjustRows();
   };
 
   rotateApp();
