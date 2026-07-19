@@ -538,9 +538,10 @@
     }
     var n = rows.length;
     if (n === 0) { return; }
-    var pad = 24;   // #adjust top/bottom padding
-    var gap = 8;    // vertical gap contributed by each row's margins
-    var availH = adj.clientHeight - pad * 2;
+    var pad = 24;         // #adjust top/bottom padding
+    var gap = 8;          // vertical gap contributed by each row's margins
+    var bottomSafe = 28;  // extra breathing room so the last row is not clipped
+    var availH = adj.clientHeight - pad * 2 - bottomSafe;
     if (availH <= 0) { return; }
     var rowH = Math.floor((availH - gap * n) / n);
     if (rowH < 24) { rowH = 24; }
