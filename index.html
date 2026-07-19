@@ -176,9 +176,9 @@
     border-bottom: none;
     padding: 0;
   }
-  #adjust .stepRow .stepBtn,
-  #adjust .stepRow .stepVal {
+  #adjust .stepRow .stepBtn {
     display: table-cell;
+    width: 50%;
     vertical-align: middle;
     text-align: center;
     font-size: 54px;
@@ -186,9 +186,6 @@
     letter-spacing: 1px;
     border: 2px solid #000000;
     padding: 28px 8px;
-  }
-  #adjust .stepRow .stepVal {
-    width: 50%;
   }
 </style>
 </head>
@@ -441,16 +438,13 @@
     document.getElementById("history").style.display = "none";
   }
 
-  // Open the Adjust stopwatch menu (presets + fine-tune). Seed the draft
-  // from the current total so +/- starts at a useful value.
+  // Open the Adjust stopwatch menu. The draft starts at zero (independent
+  // of the current total); presets and +/- steps only build the draft, and
+  // nothing is applied to the stopwatch until "Set to" is tapped.
   function openAdjust(e) {
     stopBubble(e);
     hideHistory();
-    adjustDraftMs = currentTotal();
-    // If the clock is still at zero, default the draft to 30 minutes.
-    if (adjustDraftMs <= 0) {
-      adjustDraftMs = 30 * 60 * 1000;
-    }
+    adjustDraftMs = 0;
     renderAdjust();
     document.getElementById("adjust").style.display = "block";
   }
@@ -463,19 +457,34 @@
     var html = "<div class='menuTitle'>Adjust stopwatch</div>";
     html += "<div class='menuInfo'>Total  <span id='adjustTotal'>" +
       formatTime(currentTotal()) + "</span></div>";
-    html += "<div class='menuBtn' onclick='applyTotalTime(30 * 60 * 1000)'>30 min</div>";
-    html += "<div class='menuBtn' onclick='applyTotalTime(60 * 60 * 1000)'>1 hour</div>";
-    html += "<div class='menuBtn' onclick='applyTotalTime(120 * 60 * 1000)'>2 hours</div>";
+    // Presets only load the draft; they do not change the stopwatch yet.
+    html += "<div class='menuBtn' onclick='setDraft(30 * 60 * 1000)'>30 min</div>";
+    html += "<div class='menuBtn' onclick='setDraft(60 * 60 * 1000)'>1 hour</div>";
+    html += "<div class='menuBtn' onclick='setDraft(120 * 60 * 1000)'>2 hours</div>";
     html += "<div class='menuTitle'>Custom</div>";
+    html += "<div class='menuInfo'>" + formatTime(adjustDraftMs) + "</div>";
+    html += "<div class='stepRow'>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-60)'>-1h</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(60)'>+1h</div>";
+    html += "</div>";
+    html += "<div class='stepRow'>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(-10)'>-10m</div>";
+    html += "<div class='stepBtn' onclick='nudgeAdjust(10)'>+10m</div>";
+    html += "</div>";
     html += "<div class='stepRow'>";
     html += "<div class='stepBtn' onclick='nudgeAdjust(-5)'>-5m</div>";
-    html += "<div class='stepVal'>" + formatTime(adjustDraftMs) + "</div>";
     html += "<div class='stepBtn' onclick='nudgeAdjust(5)'>+5m</div>";
     html += "</div>";
     html += "<div class='menuBtn' onclick='applyTotalTime(adjustDraftMs)'>Set to " +
       formatTime(adjustDraftMs) + "</div>";
     html += "<div class='menuBtn' onclick='hideAdjust()'>Cancel</div>";
     document.getElementById("adjust").innerHTML = html;
+  }
+
+  // Load a preset amount into the draft without touching the stopwatch.
+  function setDraft(ms) {
+    adjustDraftMs = ms < 0 ? 0 : ms;
+    renderAdjust();
   }
 
   // Change the custom draft by deltaMinutes (clamped at 0).
