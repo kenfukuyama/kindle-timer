@@ -144,6 +144,15 @@
     border-bottom: none;
     text-align: center;
   }
+  /* Read-only current-total line shown at the top of the menus. */
+  #history .menuInfo, #adjust .menuInfo {
+    font-size: 54px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 4px 4px 24px 4px;
+    border-bottom: none;
+    text-align: center;
+  }
   #adjust {
     display: none;
     position: absolute;
@@ -409,6 +418,7 @@
       return;
     }
     var html = "<div class='menuTitle'>Lap menu</div>";
+    html += "<div class='menuInfo'>Total  " + formatTime(currentTotal()) + "</div>";
     html += "<div class='menuBtn' onclick='openAdjust(event)'>Adjust stopwatch</div>";
     if (laps.length === 0) {
       html += "<div>No laps yet</div>";
@@ -445,6 +455,7 @@
 
   function renderAdjust() {
     var html = "<div class='menuTitle'>Adjust stopwatch</div>";
+    html += "<div class='menuInfo'>Total  " + formatTime(currentTotal()) + "</div>";
     html += "<div class='menuBtn' onclick='applyTotalTime(30 * 60 * 1000)'>30 min</div>";
     html += "<div class='menuBtn' onclick='applyTotalTime(60 * 60 * 1000)'>1 hour</div>";
     html += "<div class='menuBtn' onclick='applyTotalTime(120 * 60 * 1000)'>2 hours</div>";
