@@ -163,7 +163,9 @@
     background: #ffffff;
     padding: 24px;
     overflow-y: auto;
-    z-index: 16;
+    /* Must sit above #historyTap (z-index 20) so its top buttons are
+       tappable; the X button is used to close it. */
+    z-index: 30;
   }
   /* The adjust menu is compact so all controls fit without scrolling. */
   #adjust .menuInfo {
