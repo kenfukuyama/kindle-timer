@@ -1,0 +1,59 @@
+{
+    "items": [
+        {
+            "name": "Keep awake 15 min",
+            "priority": 1,
+            "action": "./bin/keepawake.sh",
+            "params": "900",
+            "exitmenu": true
+        },
+        {
+            "name": "Keep awake 30 min",
+            "priority": 2,
+            "action": "./bin/keepawake.sh",
+            "params": "1800",
+            "exitmenu": true
+        },
+        {
+            "name": "Keep awake 1 hour",
+            "priority": 3,
+            "action": "./bin/keepawake.sh",
+            "params": "3600",
+            "exitmenu": true
+        },
+        {
+            "name": "Keep awake 2 hours",
+            "priority": 4,
+            "action": "./bin/keepawake.sh",
+            "params": "7200",
+            "exitmenu": true
+        },
+        {
+            "name": "Keep awake 3 hours",
+            "priority": 5,
+            "action": "./bin/keepawake.sh",
+            "params": "10800",
+            "exitmenu": true
+        },
+        {
+            "name": "Keep awake 6 hours",
+            "priority": 6,
+            "action": "./bin/keepawake.sh",
+            "params": "21600",
+            "exitmenu": true
+        },
+        {
+            "name": "Keep awake 12 hours",
+            "priority": 7,
+            "action": "./bin/keepawake.sh",
+            "params": "43200",
+            "exitmenu": true
+        },
+        {
+            "name": "Cancel keep awake",
+            "priority": 8,
+            "action": "./bin/cancel.sh",
+            "exitmenu": true
+        }
+    ]
+}
