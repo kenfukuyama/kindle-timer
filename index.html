@@ -552,7 +552,7 @@
       var isTop = row.className.indexOf("topRow") !== -1;
       row.style.margin = (gap / 2) + "px 0";
       row.style.height = rowH + "px";
-      var cellFont = isTop ? Math.floor(font * 0.68) : font;
+      var cellFont = isTop ? Math.floor(font * 0.95) : font;
       var cells = row.childNodes;
       for (var c = 0; c < cells.length; c++) {
         if (cells[c].nodeType !== 1) { continue; }
