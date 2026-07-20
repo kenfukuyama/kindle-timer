@@ -94,6 +94,19 @@
     line-height: 1.25;
     letter-spacing: 1px;
   }
+  /* Static refresh-tier mark (top-left). Shown only in the slower tiers:
+     ":" = 10s updates, "." = 1m updates. Sits under #historyTap so the
+     top tap zone still opens the lap menu. */
+  #refreshMark {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    z-index: 10;
+    font-size: 48px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000000;
+  }
   /* Invisible tap zone across the top of the (rotated) content that toggles
      the full lap-history overlay. */
   #historyTap {
@@ -242,6 +255,7 @@
       </div>
     </div>
   </div>
+  <div id="refreshMark"></div>
   <div id="historyTap" onclick="toggleHistory()"></div>
   <div id="history" onclick="hideHistory()"></div>
   <div id="adjust"></div>
@@ -253,6 +267,7 @@
   var totalBeforePause = 0;
   var splitBeforePause = 0;
   var tickHandle = null;
+  var tickPeriod = 1000;
   var laps = [];
   var LAPS_SHOWN = 3;
   var lapsHideTimer = null;
@@ -265,6 +280,19 @@
   var lastTotalLen = -1;
   // Draft total used while fine-tuning in the Adjust stopwatch menu.
   var adjustDraftMs = 0;
+  // Snapshot of elapsed total when Adjust opens (static while the menu is up).
+  var adjustTotalMs = 0;
+  // Adaptive e-ink refresh: tiers are relative to refreshAnchor and reset on
+  // Start/Stop, Lap, or a tap on the main/total clocks.
+  // Main/split (large): 1s for 1m, then 10s until 10m, then 1m.
+  // Total (small): 1s for 1m, then 1m.
+  var MS_1M = 60000;
+  var MS_10M = 600000;
+  var refreshAnchor = 0;
+  var lastSplitSlot = -1;
+  var lastTotalSlot = -1;
+  // Last painted refresh-tier glyph ("" / ":" / "."). Only rewritten on change.
+  var refreshMarkText = "";
 
   function formatTime(ms) {
     var totalSeconds = Math.floor(ms / 1000);
@@ -307,26 +335,123 @@
     }
   }
 
+  function splitRefreshPeriod(sinceMs) {
+    if (sinceMs < MS_1M) { return 1000; }
+    if (sinceMs < MS_10M) { return 10000; }
+    return MS_1M;
+  }
+
+  function totalRefreshPeriod(sinceMs) {
+    return sinceMs < MS_1M ? 1000 : MS_1M;
+  }
+
+  function masterRefreshPeriod(sinceMs) {
+    if (sinceMs < MS_1M) { return 1000; }
+    if (sinceMs < MS_10M) { return 10000; }
+    return MS_1M;
+  }
+
+  // Tier glyph for the top-left mark. Empty during the 1s tier.
+  function refreshMarkForSince(sinceMs) {
+    if (sinceMs < MS_1M) { return ""; }
+    if (sinceMs < MS_10M) { return ":"; }
+    return ".";
+  }
+
+  // Paint the mark only when the tier changes (static between transitions).
+  function updateRefreshMark(sinceMs) {
+    var next = refreshMarkForSince(sinceMs);
+    if (next === refreshMarkText) { return; }
+    refreshMarkText = next;
+    document.getElementById("refreshMark").innerHTML = next;
+  }
+
+  function syncRefreshSlots() {
+    var since = Date.now() - refreshAnchor;
+    if (since < 0) { since = 0; }
+    lastSplitSlot = Math.floor(since / splitRefreshPeriod(since));
+    lastTotalSlot = Math.floor(since / totalRefreshPeriod(since));
+  }
+
+  // Paint split and/or total. Skipping a side avoids an e-ink refresh for it.
+  function paintClocks(doSplit, doTotal) {
+    if (doSplit) {
+      var splitStr = formatTime(currentSplit());
+      document.getElementById("clockText").innerHTML = splitStr;
+      // Refit only when the digit count changes (monospace width is otherwise
+      // constant) so we don't reflow every paint on the e-ink screen.
+      if (splitStr.length !== lastSplitLen) {
+        lastSplitLen = splitStr.length;
+        fitText("clock", "clockText", 0.98);
+      }
+    }
+    if (doTotal) {
+      var totalStr = formatTime(currentTotal());
+      document.getElementById("totalText").innerHTML = totalStr;
+      if (totalStr.length !== lastTotalLen) {
+        lastTotalLen = totalStr.length;
+        fitText("total", "totalText", 0.5);
+      }
+    }
+  }
+
   function updateClock() {
-    var splitStr = formatTime(currentSplit());
-    document.getElementById("clockText").innerHTML = splitStr;
-    var totalStr = formatTime(currentTotal());
-    document.getElementById("totalText").innerHTML = totalStr;
-    // Refit only when the digit count changes (monospace width is otherwise
-    // constant) so we don't reflow every second on the e-ink screen.
-    if (splitStr.length !== lastSplitLen) {
-      lastSplitLen = splitStr.length;
-      fitText("clock", "clockText", 0.98);
+    paintClocks(true, true);
+  }
+
+  function stopTicker() {
+    if (tickHandle) {
+      clearInterval(tickHandle);
+      tickHandle = null;
     }
-    if (totalStr.length !== lastTotalLen) {
-      lastTotalLen = totalStr.length;
-      fitText("total", "totalText", 0.5);
+  }
+
+  function startTicker(period) {
+    stopTicker();
+    tickPeriod = period;
+    tickHandle = setInterval(onTick, tickPeriod);
+  }
+
+  function ensureTickInterval() {
+    if (!running) { return; }
+    var since = Date.now() - refreshAnchor;
+    if (since < 0) { since = 0; }
+    var needed = masterRefreshPeriod(since);
+    if (needed !== tickPeriod) {
+      startTicker(needed);
     }
-    // Keep the menu's "Total" readout in sync while a menu is open.
-    var historyTotal = document.getElementById("historyTotal");
-    if (historyTotal) { historyTotal.innerHTML = totalStr; }
-    var adjustTotal = document.getElementById("adjustTotal");
-    if (adjustTotal) { adjustTotal.innerHTML = totalStr; }
+  }
+
+  // Periodic tick while running: refresh each clock only when its tier says so.
+  function onTick() {
+    var since = Date.now() - refreshAnchor;
+    if (since < 0) { since = 0; }
+    updateRefreshMark(since);
+    var splitPeriod = splitRefreshPeriod(since);
+    var totalPeriod = totalRefreshPeriod(since);
+    var splitSlot = Math.floor(since / splitPeriod);
+    var totalSlot = Math.floor(since / totalPeriod);
+    var doSplit = splitSlot !== lastSplitSlot;
+    var doTotal = totalSlot !== lastTotalSlot;
+    if (doSplit) { lastSplitSlot = splitSlot; }
+    if (doTotal) { lastTotalSlot = totalSlot; }
+    if (doSplit || doTotal) {
+      paintClocks(doSplit, doTotal);
+    }
+    ensureTickInterval();
+  }
+
+  // Restart the adaptive refresh schedule (back to 1s for both clocks).
+  function resetRefreshSchedule() {
+    refreshAnchor = Date.now();
+    paintClocks(true, true);
+    syncRefreshSlots();
+    updateRefreshMark(0);
+    if (running) {
+      startTicker(1000);
+    } else {
+      stopTicker();
+    }
   }
 
   function setStartLabel(isRunning) {
@@ -372,16 +497,14 @@
       running = true;
       startTime = Date.now();
       setStartLabel(true);
-      tickHandle = setInterval(updateClock, 1000);
     } else {
       // Capture both clocks while still running, then stop.
       totalBeforePause = currentTotal();
       splitBeforePause = currentSplit();
       running = false;
-      clearInterval(tickHandle);
       setStartLabel(false);
-      updateClock();
     }
+    resetRefreshSchedule();
     showLaps();
   }
 
@@ -395,18 +518,19 @@
     totalBeforePause = currentTotal();
     splitBeforePause = 0;
     running = false;
-    clearInterval(tickHandle);
     setStartLabel(false);
-    updateClock();
+    resetRefreshSchedule();
     showLaps();
   }
 
   // Reset is a two-step gesture: tap the main clock to "arm" it, then tap
   // the total counter to confirm. The armed state expires after 3s.
+  // Either tap also resets the adaptive refresh schedule.
   function armReset() {
     resetArmed = true;
     if (resetArmTimer) { clearTimeout(resetArmTimer); }
     resetArmTimer = setTimeout(function () { resetArmed = false; }, 3000);
+    resetRefreshSchedule();
   }
 
   function confirmReset() {
@@ -414,18 +538,19 @@
       resetArmed = false;
       if (resetArmTimer) { clearTimeout(resetArmTimer); }
       resetAll();
+    } else {
+      resetRefreshSchedule();
     }
   }
 
   // Reset: zeroes both timers, clears laps, and stops.
   function resetAll() {
     running = false;
-    clearInterval(tickHandle);
     totalBeforePause = 0;
     splitBeforePause = 0;
     laps = [];
     setStartLabel(false);
-    updateClock();
+    resetRefreshSchedule();
     if (lapsHideTimer) { clearTimeout(lapsHideTimer); }
     hideLaps();
   }
@@ -479,6 +604,7 @@
     stopBubble(e);
     hideHistory();
     adjustDraftMs = 0;
+    adjustTotalMs = currentTotal();
     // Display first so renderAdjust can measure the overlay for auto-fit.
     document.getElementById("adjust").style.display = "block";
     renderAdjust();
@@ -493,7 +619,7 @@
     var html = "<div class='topRow'>";
     html += "<div class='topCell topSide'></div>";
     html += "<div class='topCell'>Total  <span id='adjustTotal'>" +
-      formatTime(currentTotal()) + "</span></div>";
+      formatTime(adjustTotalMs) + "</span></div>";
     html += "<div class='topCell topSide topX' onclick='hideAdjust()'>\u2715</div>";
     html += "</div>";
     // Presets only load the draft; they do not change the stopwatch yet.
@@ -582,11 +708,10 @@
   function applyTotalTime(ms) {
     if (ms < 0) { ms = 0; }
     running = false;
-    clearInterval(tickHandle);
     totalBeforePause = ms;
     splitBeforePause = 0;
     setStartLabel(false);
-    updateClock();
+    resetRefreshSchedule();
     hideAdjust();
     hideHistory();
     showLaps();
